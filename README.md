@@ -5,7 +5,7 @@ This repository contains scripts and data for fine-tuning a causal language mode
 ## What this project does
 
 - Preprocesses parallel English-Vietnamese data and (optionally) generates CoT annotations using a generative API.
-- Fine-tunes a pretrained causal LM with LoRA adapters, with configurable maximum token length, batch size, gradient accumulation and quantization options.
+- Fine-tunes a pretrained causal LM with LoRA adapters, with configurable maximum token length, batch size and gradient accumulation. Quantization is not enabled by default in the provided training scripts; see the Quantization & Offload section below for instructions if you want to enable 8-bit/4-bit training.
 - Provides small evaluation scripts to run quick checks and compute losses or generate outputs.
 
 ## Repository layout
@@ -42,7 +42,7 @@ Open `train/train.py` to configure training parameters. Important flags to check
 - `MAX_LEN` — maximum total tokens in input/labels (prompt + CoT + answer)
 - `BATCH_SIZE` and `gradient_accumulation_steps`
 - `num_train_epochs`, `learning_rate`
-- `fp16` and `load_in_8bit` (if using bitsandbytes)
+- `fp16` (this repo's example uses fp16) — note `load_in_8bit` is not set in the example scripts
 
 Recommendations when using CoT:
 
@@ -72,13 +72,27 @@ print('forward ok')
 
 ## Quantization & Offload
 
-- If training is slow or you run out of VRAM, consider these options:
+Quantization (8-bit / 4-bit) and offload can help when VRAM is limited, but they are not enabled by default in this repository's training scripts. The provided `train/train.py` uses fp16 + LoRA which is already memory-friendly.
 
-  - `load_in_8bit=True` (bitsandbytes) to reduce RAM requirements.
-  - Gradient checkpointing and `model.config.use_cache=False`.
-  - CPU/GPU offload using accelerate / DeepSpeed ZeRO stage 2/3.
+If you want to enable quantized training with bitsandbytes, typical steps are:
 
-- Caveats: bitsandbytes requires recent CUDA & GPU architectures. P100 GPUs often do not support 8-bit/4-bit bnb paths; test bitsandbytes import and device compute capability before relying on it.
+- Install bitsandbytes and accelerate:
+
+  - pip install bitsandbytes accelerate
+
+- Load the model with quantization flags, for example:
+
+  - AutoModelForCausalLM.from_pretrained(MODEL_ID, load_in_8bit=True, device_map='auto', trust_remote_code=True)
+
+Or use the 4-bit options from bnb for more aggressive quantization following the Hugging Face recommendations.
+
+Also consider these alternatives to reduce memory without quantization:
+
+- Gradient checkpointing and `model.config.use_cache = False`.
+- Reduce `per_device_train_batch_size` and increase `gradient_accumulation_steps`.
+- Use CPU/GPU offload with `accelerate` or DeepSpeed (ZeRO).
+
+Caveats: bitsandbytes requires recent CUDA, driver and GPU architectures. Some older GPUs (for example many P100 setups) do not support 8-bit/4-bit bnb paths. Always test `import bitsandbytes as bnb` and a small forward pass before relying on quantization in a long training job.
 
 ## Evaluation
 
