@@ -16,16 +16,16 @@ from peft import LoraConfig, get_peft_model, PeftModel, TaskType
 # CONFIG
 # -------------------
 MODEL_ID = "Qwen/Qwen3-0.6B-Base"   # đổi nếu cần
-OUTPUT_DIR = "./qwen3_envi_lora_cot"
-TRAIN_FILE = "D:/Finetune/finetune/data/train_cot.json"
-VALID_FILE = "D:/Finetune/finetune/data/test_cot.json"
-TEST_FILE  = "D:/Finetune/finetune/data/valid_cot.json"
+OUTPUT_DIR = "./qwen3_envi_lora"
+TRAIN_FILE = "D:/Finetune/finetune/data/train.json"
+VALID_FILE = "D:/Finetune/finetune/data/test.json"
+TEST_FILE  = "D:/Finetune/finetune/data/valid.json"
 
-MAX_LEN = 1024        # tăng để chứa chain-of-thought; tùy model có thể lên 2048
-BATCH_SIZE = 1        # CoT dài -> giảm batch nếu OOM; dùng gradient accumulation để giữ hiệu quả
+MAX_LEN = 512
+BATCH_SIZE = 2
 GRAD_ACCUM = 8
-LR = 1e-4             # thường giảm LR khi huấn luyện CoT, nhưng LoRA có thể chịu LR hơi lớn hơn
-EPOCHS = 5
+LR = 2e-4
+EPOCHS = 3
 SEED = 42
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 torch.manual_seed(SEED)
@@ -51,9 +51,9 @@ if tokenizer.pad_token is None:
 # Preprocess: create prompt + full text, mask prompt tokens in labels
 # -------------------
 def preprocess_function(examples):
-    # expects 'en' and 'cot'
+    # expects 'en' and 'vi'
     sources = examples["en"]
-    targets = examples["cot"]
+    targets = examples["vi"]
 
     prompts = [f"Translate English to Vietnamese.\nSource: {s}\nTarget:" for s in sources]
     full_texts = [p + " " + t for p, t in zip(prompts, targets)]
@@ -64,7 +64,6 @@ def preprocess_function(examples):
         truncation=True,
         padding="max_length",
         max_length=MAX_LEN,
-        return_attention_mask=True,
     )
 
     # tokenize prompts to know prompt length (per sample)
@@ -73,17 +72,16 @@ def preprocess_function(examples):
         truncation=True,
         padding="max_length",
         max_length=MAX_LEN,
-        return_attention_mask=True,
     )
 
     labels = []
     pad_id = tokenizer.pad_token_id
 
-    for input_ids, prompt_mask in zip(tokenized_full["input_ids"], tokenized_prompts["attention_mask"]):
+    for input_ids, prompt_ids in zip(tokenized_full["input_ids"], tokenized_prompts["input_ids"]):
         lab = input_ids.copy()
-        # count non-pad tokens in prompt using attention_mask
-        prompt_len = sum(prompt_mask)
-        # mask prompt positions so loss only computed on target (keep CoT in target)
+        # count non-pad tokens in prompt (i.e., prompt token length)
+        prompt_len = sum(1 for t in prompt_ids if t != pad_id)
+        # mask prompt positions so loss only computed on target
         for i in range(min(prompt_len, len(lab))):
             lab[i] = -100
         # ensure padding tokens are -100
@@ -142,25 +140,24 @@ training_args = TrainingArguments(
     output_dir=OUTPUT_DIR,
     per_device_train_batch_size=BATCH_SIZE,
     per_device_eval_batch_size=BATCH_SIZE,
-    gradient_accumulation_steps=GRAD_ACCUM,  # use biến trên
-    num_train_epochs=EPOCHS,
+    gradient_accumulation_steps=4,
+    num_train_epochs=3,
     learning_rate=LR,
     fp16=True,
     logging_steps=10,
 
+    # đồng bộ
     eval_strategy="steps",
-    save_strategy="steps",
-    save_steps=500,
-    eval_steps=500,
+    save_strategy="steps",     
+    save_steps=100,
+    eval_steps=100,
     save_total_limit=2,
 
     load_best_model_at_end=True,
     metric_for_best_model="eval_loss",
     greater_is_better=False,
 
-    report_to="none",
-
-    predict_with_generate=True,  # helpful for CoT evaluation (compute BLEU/EM on generated sequences)
+    report_to="none"
 )
 
 # -------------------
