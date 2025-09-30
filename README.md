@@ -11,7 +11,7 @@ This repository contains scripts and data for fine-tuning a causal language mode
 ## Repository layout
 
 - `data/` - raw and preprocessed datasets. Contains `train.json`, `train_cot.json`, `valid.json`, `valid_cot.json`, `test.json`, `test_cot.json` and preprocessing notebooks/scripts.
-- `train/` - training scripts and model checkpoints. See `train.py` for the main Trainer pipeline.
+- `finetune/` - training scripts and model checkpoints. See `finetune.py` and `finetune_cot.py` for the main finetune pipeline.
 - `evaluation/` - evaluation helpers and example evaluation scripts.
 
 ## Experimental Results
