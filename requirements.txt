@@ -1,0 +1,22 @@
+# Core
+transformers==4.52.0
+datasets>=2.19.0
+peft>=0.15.0
+accelerate>=0.30.0
+safetensors>=0.4.2
+
+# Training/Eval
+sacrebleu>=2.4.0
+bert-score>=0.3.13
+tqdm>=4.66.0
+
+# Tokenization backends used by some models
+sentencepiece>=0.1.99
+# Qwen and other models may leverage this BPE impl
+tiktoken>=0.7.0
+
+# PyTorch (choose the wheel matching your CUDA/CPU setup)
+# On Windows, install the appropriate torch from https://pytorch.org/get-started/locally/
+# Example (CPU only): pip install torch
+# Example (CUDA 12.8): pip install torch --index-url https://download.pytorch.org/whl/cu121
+torch>=2.7.0

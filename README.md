@@ -127,23 +127,26 @@ python data/preprocess.py
 
 # Experimental Results
 
-## BLEU Scores Comparison
+## Evaluation metrics (BLEU, chrF, BERTScore)
 
-| Model              | Description                                   | BLEU-2 | BLEU-4 |
-| ------------------ | --------------------------------------------- | ------ | ------ |
-| Base Model         | Pretrained base model (no fine-tuning)        | 5.69   | 1.19   |
-| Normal Fine-tuning | Normal fine-tuning without chain-of-thought   | 27.89  | 20.01  |
-| CoT Fine-tuning    | Fine-tuning with chain-of-thought supervision | 26.20  | 18.50  |
+| Model              | Description                                   | BLEU-2 | BLEU-4 | chrF  | BERTScore F1 |
+| ------------------ | --------------------------------------------- | ------ | ------ | ----- | ------------ |
+| Base Model         | Pretrained base model (no fine-tuning)        | 6.53   | 2.64   | 13.08 | 0.644        |
+| Normal Fine-tuning | Normal fine-tuning without chain-of-thought   | 28.00  | 20.74  | 40.18 | 0.724        |
+| CoT Fine-tuning    | Fine-tuning with chain-of-thought supervision | 22.95  | 15.26  | 36.59 | 0.755        |
+
+All metrics computed on n = 66 test samples.
 
 ## Analysis
 
-- The base model without fine-tuning shows very low performance with BLEU-2 score of 5.69 and BLEU-4 score of 1.19
-- Normal fine-tuning significantly improves the performance:
-  - BLEU-2 increased to 27.89 (+22.20 points)
-  - BLEU-4 increased to 20.01 (+18.82 points)
-- Chain-of-thought fine-tuning shows slightly lower but comparable performance to normal fine-tuning:
-  - BLEU-2: 26.20 (compared to 27.89 for normal fine-tuning)
-  - BLEU-4: 18.50 (compared to 20.01 for normal fine-tuning)
+- The base model without fine-tuning shows low performance with BLEU-2 = 6.53 and BLEU-4 = 2.64 (n = 66).
+- Normal fine-tuning significantly improves performance vs. base:
+  - BLEU-2 increased to 28.00 (+21.47 points)
+  - BLEU-4 increased to 20.74 (+18.10 points)
+- Chain-of-thought fine-tuning is lower than normal fine-tuning on BLEU but still clearly above base:
+  - BLEU-2: 22.95 (vs. 28.00 for normal fine-tuning)
+  - BLEU-4: 15.26 (vs. 20.74 for normal fine-tuning)
+  - Note: On other metrics from the evaluation JSONs, CoT achieved BERTScore F1 ≈ 0.755 (higher than normal ≈ 0.724), while chrF was lower (≈ 36.59 vs ≈ 40.18 for normal).
 
 ## License & acknowledgements
 
@@ -156,6 +159,6 @@ If you want, I can also:
 
 ---
 
-Updated: September 28, 2025
+Updated: September 30, 2025
 
 # Finetune
